@@ -82,7 +82,7 @@ class Equipment:
     writable_holding_registers: list[WritableRegister] = field(default_factory=list)
     holding_registers: list[Register] = field(default_factory=list)
     input_registers: list[Register] = field(default_factory=list)
-    datastore_size: int = 64
+    datastore_size: int = 65536
 
     def make_context(self) -> ModbusSlaveContext:
         context = ModbusSlaveContext(

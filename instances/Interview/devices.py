@@ -76,7 +76,6 @@ CRAH = Equipment(
 THS = Equipment(
 	name="THS Gateway",
 	unit_id=3,
-	datastore_size=256,
 	coils=[
 		Coil(1, "Sensor enabled", True),
 		Coil(2, "Battery Low"),

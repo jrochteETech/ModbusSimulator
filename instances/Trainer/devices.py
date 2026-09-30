@@ -108,7 +108,6 @@ def make_ths_gateway(unit_id: int, gateway_index: int) -> Equipment:
 	return Equipment(
 		name=f"THS Gateway {gateway_index + 1} (Sensors {gateway_index * 15 + 1}-{gateway_index * 15 + 15})",
 		unit_id=unit_id,
-		datastore_size=320,
 		coils=coils,
 		holding_registers=holding_registers,
 		input_registers=input_registers,
