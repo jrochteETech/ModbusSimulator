@@ -1,0 +1,155 @@
+{
+  "name": "Averaging",
+  "parameters": {
+    "ChildTagPath": {
+      "dataType": "String",
+      "value": "Temperature/Temperature"
+    },
+    "EngineeringUnit": {
+      "dataType": "String",
+      "value": "°F"
+    },
+    "FormatString": {
+      "dataType": "String",
+      "value": "0.0"
+    },
+    "Path01": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path02": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path03": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path04": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path05": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path06": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path07": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path08": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path09": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path10": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path11": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path12": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path13": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path14": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path15": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path16": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path17": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path18": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path19": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path20": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path21": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path22": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path23": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path24": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path25": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path26": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path27": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path28": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path29": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Path30": {
+      "dataType": "String",
+      "value": ""
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "valueSource": "expr",
+      "expression": "mean(if(len(trim({Path01})) > 0, try(if(isGood(tag({Path01} + \"/\" + {ChildTagPath})), tag({Path01} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path02})) > 0, try(if(isGood(tag({Path02} + \"/\" + {ChildTagPath})), tag({Path02} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path03})) > 0, try(if(isGood(tag({Path03} + \"/\" + {ChildTagPath})), tag({Path03} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path04})) > 0, try(if(isGood(tag({Path04} + \"/\" + {ChildTagPath})), tag({Path04} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path05})) > 0, try(if(isGood(tag({Path05} + \"/\" + {ChildTagPath})), tag({Path05} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path06})) > 0, try(if(isGood(tag({Path06} + \"/\" + {ChildTagPath})), tag({Path06} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path07})) > 0, try(if(isGood(tag({Path07} + \"/\" + {ChildTagPath})), tag({Path07} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path08})) > 0, try(if(isGood(tag({Path08} + \"/\" + {ChildTagPath})), tag({Path08} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path09})) > 0, try(if(isGood(tag({Path09} + \"/\" + {ChildTagPath})), tag({Path09} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path10})) > 0, try(if(isGood(tag({Path10} + \"/\" + {ChildTagPath})), tag({Path10} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path11})) > 0, try(if(isGood(tag({Path11} + \"/\" + {ChildTagPath})), tag({Path11} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path12})) > 0, try(if(isGood(tag({Path12} + \"/\" + {ChildTagPath})), tag({Path12} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path13})) > 0, try(if(isGood(tag({Path13} + \"/\" + {ChildTagPath})), tag({Path13} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path14})) > 0, try(if(isGood(tag({Path14} + \"/\" + {ChildTagPath})), tag({Path14} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path15})) > 0, try(if(isGood(tag({Path15} + \"/\" + {ChildTagPath})), tag({Path15} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path16})) > 0, try(if(isGood(tag({Path16} + \"/\" + {ChildTagPath})), tag({Path16} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path17})) > 0, try(if(isGood(tag({Path17} + \"/\" + {ChildTagPath})), tag({Path17} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path18})) > 0, try(if(isGood(tag({Path18} + \"/\" + {ChildTagPath})), tag({Path18} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path19})) > 0, try(if(isGood(tag({Path19} + \"/\" + {ChildTagPath})), tag({Path19} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path20})) > 0, try(if(isGood(tag({Path20} + \"/\" + {ChildTagPath})), tag({Path20} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path21})) > 0, try(if(isGood(tag({Path21} + \"/\" + {ChildTagPath})), tag({Path21} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path22})) > 0, try(if(isGood(tag({Path22} + \"/\" + {ChildTagPath})), tag({Path22} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path23})) > 0, try(if(isGood(tag({Path23} + \"/\" + {ChildTagPath})), tag({Path23} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path24})) > 0, try(if(isGood(tag({Path24} + \"/\" + {ChildTagPath})), tag({Path24} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path25})) > 0, try(if(isGood(tag({Path25} + \"/\" + {ChildTagPath})), tag({Path25} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path26})) > 0, try(if(isGood(tag({Path26} + \"/\" + {ChildTagPath})), tag({Path26} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path27})) > 0, try(if(isGood(tag({Path27} + \"/\" + {ChildTagPath})), tag({Path27} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path28})) > 0, try(if(isGood(tag({Path28} + \"/\" + {ChildTagPath})), tag({Path28} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path29})) > 0, try(if(isGood(tag({Path29} + \"/\" + {ChildTagPath})), tag({Path29} + \"/\" + {ChildTagPath}), null), null), null), if(len(trim({Path30})) > 0, try(if(isGood(tag({Path30} + \"/\" + {ChildTagPath})), tag({Path30} + \"/\" + {ChildTagPath}), null), null), null))",
+      "dataType": "Float8",
+      "name": "Average",
+      "formatString": {
+        "bindType": "parameter",
+        "binding": "{FormatString}"
+      },
+      "engUnit": {
+        "bindType": "parameter",
+        "binding": "{EngineeringUnit}"
+      },
+      "tagType": "AtomicTag"
+    }
+  ]
+}
