@@ -76,7 +76,7 @@ class Coil:
 class Equipment:
     name: str
     unit_id: int
-    zero_based: bool = True
+    zero_based: bool = False
     reverse_word_order: bool = False
     coils: list[Coil] = field(default_factory=list)
     writable_holding_registers: list[WritableRegister] = field(default_factory=list)

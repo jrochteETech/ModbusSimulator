@@ -5,7 +5,7 @@ import time
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.server import StartAsyncTcpServer
 
-from instances.instance_1.devices import EQUIPMENT
+from devices import EQUIPMENT
 
 
 STEP_SECONDS = 0.5
@@ -39,7 +39,7 @@ async def main() -> None:
     simulation.start()
 
     print("=" * 55)
-    print("  Modbus Simulator")
+    print("  Modbus Simulator - Instance 1")
     for equipment in EQUIPMENT:
         print(f"  Unit {equipment.unit_id}: {equipment.name} (port 502)")
     print("=" * 55)

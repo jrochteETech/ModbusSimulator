@@ -1,13 +1,33 @@
 services:
-  modbus-simulator:
+  modbus-interview:
     image: modbussimulator:latest
     pull_policy: never
     container_name: modbus-simulator
+    command: ["python", "-u", "server.py"]
     restart: unless-stopped
     ports:
       - "8052:502"
+    environment:
+      PYTHONPATH: /shared
     volumes:
-      - ./:/app
+      - ./instances/Interview:/app
+      - ./equipment.py:/shared/equipment.py:ro
+    networks:
+      - ignition_ignition-net
+
+  modbus-trainer:
+    image: modbussimulator:latest
+    pull_policy: never
+    container_name: modbus-simulator-2
+    command: ["python", "-u", "server.py"]
+    restart: unless-stopped
+    ports:
+      - "8053:502"
+    environment:
+      PYTHONPATH: /shared
+    volumes:
+      - ./instances/Trainer:/app
+      - ./equipment.py:/shared/equipment.py:ro
     networks:
       - ignition_ignition-net
 
