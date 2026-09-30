@@ -12,7 +12,6 @@ from equipment import (
 POWER_METER = Equipment(
 	name="Three-phase Power Meter",
 	unit_id=1,
-	zero_based=False,
 	coils=[
 		Coil(1, "Meter healthy", True),
 	],
@@ -39,8 +38,6 @@ POWER_METER = Equipment(
 CRAH = Equipment(
 	name="CRAH Unit",
 	unit_id=2,
-	zero_based=True,
-	reverse_word_order=True,
 	coils=[
 		Coil(0, "Unit enabled", True),
 		Coil(1, "Fan running", True),

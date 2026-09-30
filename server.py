@@ -5,7 +5,7 @@ import time
 from pymodbus.datastore import ModbusServerContext
 from pymodbus.server import StartAsyncTcpServer
 
-from instances.instance_1.devices import EQUIPMENT
+from devices import EQUIPMENT
 
 
 STEP_SECONDS = 0.5
