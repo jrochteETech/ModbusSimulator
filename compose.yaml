@@ -1,5 +1,6 @@
 services:
   modbus-interview:
+    build: .
     image: modbussimulator:latest
     pull_policy: never
     container_name: modbus-simulator
@@ -7,16 +8,21 @@ services:
     restart: unless-stopped
     ports:
       - "8052:502"
+      - "8082:8080"
     environment:
       PYTHONPATH: /app:/shared
     volumes:
       - ./instances/Interview:/app
       - ./equipment.py:/shared/equipment.py:ro
+      - ./configuration.py:/shared/configuration.py:ro
       - ./server.py:/shared/server.py:ro
+      - ./web_admin.py:/shared/web_admin.py:ro
+      - ./web:/shared/web:ro
     networks:
       - ignition_ignition-net
 
   modbus-trainer:
+    build: .
     image: modbussimulator:latest
     pull_policy: never
     container_name: modbus-simulator-2
@@ -24,12 +30,16 @@ services:
     restart: unless-stopped
     ports:
       - "8053:502"
+      - "8083:8080"
     environment:
       PYTHONPATH: /app:/shared
     volumes:
       - ./instances/Trainer:/app
       - ./equipment.py:/shared/equipment.py:ro
+      - ./configuration.py:/shared/configuration.py:ro
       - ./server.py:/shared/server.py:ro
+      - ./web_admin.py:/shared/web_admin.py:ro
+      - ./web:/shared/web:ro
     networks:
       - ignition_ignition-net
 
