@@ -35,14 +35,7 @@ Trainer units 4-13 use the supplied CRAH_V2 map with eight fans and zero-based a
 
 The UDT's `RA_Fan_CTRL_SP` and `RAT_High_Lim_SP` both address `HRF120` and therefore share one value. The 33 UDT tags without OPC item paths cannot be mapped.
 
-For an existing Trainer `devices.json`, first export a JSON backup from the web UI. Restart the Trainer container with the updated code, then run:
-
-```powershell
-docker compose restart modbus-trainer
-docker compose exec -T modbus-trainer python -m migrate_crah_v2
-```
-
-This replaces the point maps and initial values for units 4-13, preserving their names and word-order settings and leaving other devices unchanged. It applies and saves the configuration through the running web API. If any of those unit IDs are missing, no changes are made.
+The CRAH definitions replace the previous Trainer maps directly; no migration is needed. A container rebuild does not clear an existing `instances/Trainer/devices.json`, because that directory is bind-mounted. If present, remove that file before starting the rebuilt container to regenerate the Trainer defaults. This resets all saved Trainer UI customizations.
 
 ## Tests
 

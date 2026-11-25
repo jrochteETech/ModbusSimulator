@@ -1,19 +1,14 @@
 import struct
-import tempfile
 import unittest
-from pathlib import Path
 
 from configuration import (
-    ConfigurationStore,
     document_from_csv,
     document_from_equipment,
     document_to_csv,
     equipment_from_document,
 )
-from equipment import Coil, Equipment, Register, WritableRegister, float_to_registers, sine
+from equipment import Equipment, Register, WritableRegister, float_to_registers, sine
 from instances.Trainer.devices import CRAH_UNITS
-from instances.Trainer.migrate_crah_v2 import replace_crah_maps
-from server import SimulatorState
 
 
 EXPECTED_HOLDING_TYPES = {
@@ -133,37 +128,6 @@ class CrahV2Tests(unittest.TestCase):
         )
         device = equipment_from_document(document_from_csv(content))[0]
         self.assertEqual(device.writable_holding_registers[0].data_type, "float32")
-
-    def test_existing_configuration_migration_preserves_other_devices(self) -> None:
-        existing = [
-            Equipment("Other device", 1, coils=[Coil(1, "Original", True)]),
-            *[
-                Equipment(
-                    f"Custom CRAH {unit_id}", unit_id, reverse_word_order=unit_id == 4,
-                    coils=[Coil(1, "Old point")],
-                )
-                for unit_id in range(4, 14)
-            ],
-        ]
-        with tempfile.TemporaryDirectory() as directory:
-            store = ConfigurationStore(Path(directory) / "devices.json", existing)
-            original = store.load_document()
-            updated = replace_crah_maps(original)
-            self.assertEqual(store.load_document(), original)
-            self.assertEqual(updated["devices"][0], original["devices"][0])
-            self.assertEqual(updated["devices"][1]["name"], "Custom CRAH 4")
-            self.assertTrue(updated["devices"][1]["reverse_word_order"])
-            self.assertTrue(updated["devices"][1]["zero_based"])
-
-            state = SimulatorState(store)
-            state.apply_document(updated)
-            self.assertEqual(store.load_document(), updated)
-            self.assertEqual(state.snapshot()[1].coils[0].address, 0)
-
-    def test_migration_requires_every_expected_unit(self) -> None:
-        document = document_from_equipment(CRAH_UNITS[:-1])
-        with self.assertRaisesRegex(ValueError, "missing unit IDs: \\[13\\]"):
-            replace_crah_maps(document)
 
 
 if __name__ == "__main__":
