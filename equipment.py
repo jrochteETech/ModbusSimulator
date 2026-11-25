@@ -7,6 +7,12 @@ from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext
 
 
 Automation = tuple[str, dict[str, Any]]
+REGISTER_WIDTHS = {"float32": 2, "int16": 1, "uint16": 1, "uint32": 2}
+INTEGER_REGISTER_LIMITS = {
+    "int16": (-32768, 32767),
+    "uint16": (0, 65535),
+    "uint32": (0, 4294967295),
+}
 
 
 def sine(amplitude: float, period: float, offset: float) -> Automation:
@@ -25,6 +31,32 @@ def float_to_registers(value: float) -> tuple[int, int]:
     """Pack a float32 into two 16-bit registers [MSW, LSW]."""
     packed = struct.pack(">f", value)
     return struct.unpack(">HH", packed)
+
+
+def register_width(data_type: str) -> int:
+    try:
+        return REGISTER_WIDTHS[data_type]
+    except KeyError as error:
+        raise ValueError(f"Unsupported register data type: {data_type!r}") from error
+
+
+def register_to_values(value: float, data_type: str) -> tuple[int, ...]:
+    register_width(data_type)
+    if not math.isfinite(value):
+        raise ValueError("Register values must be finite")
+    if data_type == "float32":
+        try:
+            return float_to_registers(value)
+        except OverflowError as error:
+            raise ValueError("Register value is outside the float32 range") from error
+
+    integer_value = round(value)
+    minimum, maximum = INTEGER_REGISTER_LIMITS[data_type]
+    if not minimum <= integer_value <= maximum:
+        raise ValueError(f"Register value must be between {minimum} and {maximum} for {data_type}")
+    if data_type == "uint32":
+        return integer_value >> 16, integer_value & 0xFFFF
+    return (integer_value & 0xFFFF,)
 
 
 def automation_value(automation: Automation, elapsed: float) -> float:
@@ -56,6 +88,7 @@ class Register:
     address: int
     name: str
     automation: Automation
+    data_type: str = "float32"
 
 
 @dataclass(frozen=True)
@@ -63,6 +96,7 @@ class WritableRegister:
     address: int
     name: str
     initial_value: float
+    data_type: str = "float32"
 
 
 @dataclass(frozen=True)
@@ -95,7 +129,7 @@ class Equipment:
         for coil in self.coils:
             context.setValues(1, self.protocol_address(coil.address), [coil.initial_value])
         for register in self.writable_holding_registers:
-            values = float_to_registers(register.initial_value)
+            values = register_to_values(register.initial_value, register.data_type)
             if self.reverse_word_order:
                 values = values[::-1]
             context.setValues(3, self.protocol_address(register.address), list(values))
@@ -120,7 +154,9 @@ class Equipment:
         elapsed: float,
     ) -> None:
         for register in registers:
-            values = float_to_registers(automation_value(register.automation, elapsed))
+            values = register_to_values(
+                automation_value(register.automation, elapsed), register.data_type
+            )
             if self.reverse_word_order:
                 values = values[::-1]
             slave.setValues(

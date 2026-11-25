@@ -147,11 +147,15 @@
           <label>Point name<input id="pointName" required></label>
           <label>Address<input id="pointAddress" type="number" min="0" required></label>
         </div>
+        <div id="registerTypeFields">
+          <label>Register data type<select id="registerDataType"><option value="float32">Float32</option><option value="int16">Signed 16-bit integer</option><option value="uint16">Unsigned 16-bit integer</option><option value="uint32">Unsigned 32-bit integer</option></select></label>
+        </div>
         <div id="initialFields"><label id="initialLabel">Initial value<input id="initialValue"></label></div>
         <div id="automationFields">
           <div class="modal-grid">
             <label>Automation type<select id="automationType"><option value="sine">Sine wave</option><option value="linear">Linear ramp</option><option value="dew_point_fahrenheit">Dew point (°F)</option></select></label>
           </div>
+          <small>Integer registers support sine and linear automation.</small>
           <label>Automation settings (JSON)<textarea id="automationSettings" spellcheck="false"></textarea></label>
         </div>
       </div>
@@ -258,8 +262,8 @@
           <h2>Point map</h2>
           <div class="tabs">${Object.entries(groups).map(([key, group]) => `<button class="tab ${key === activeGroup ? 'active' : ''}" data-group="${key}">${group.label} <span class="mono">${device[key].length}</span></button>`).join('')}</div>
           <div class="table-head"><span class="count">${points.length} ${points.length === 1 ? 'POINT' : 'POINTS'}</span><button class="btn" id="addPoint">+ Add point</button></div>
-          <div class="table-wrap"><table><thead><tr><th>Address</th><th>Name</th><th>Behavior</th><th></th></tr></thead><tbody>
-            ${points.length ? points.map((point, index) => pointRow(point, index)).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:28px">No points in this table</td></tr>'}
+          <div class="table-wrap"><table><thead><tr><th>Address</th><th>Name</th><th>Data type</th><th>Behavior</th><th></th></tr></thead><tbody>
+            ${points.length ? points.map((point, index) => pointRow(point, index)).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">No points in this table</td></tr>'}
           </tbody></table></div>
         </section>`;
       bindEditor(device);
@@ -267,7 +271,8 @@
 
     function pointRow(point, index) {
       let behavior = point.automation ? point.automation.type : (groups[activeGroup].boolean ? (point.initial_value ? 'On' : 'Off') : point.initial_value);
-      return `<tr><td class="mono">${point.address}</td><td>${escapeHtml(point.name)}</td><td><span class="pill">${escapeHtml(behavior)}</span></td><td class="row-actions"><button class="link-btn" data-edit="${index}">Edit</button><button class="link-btn" data-remove="${index}">Remove</button></td></tr>`;
+      const dataType = groups[activeGroup].boolean ? 'Boolean' : (point.data_type || 'float32');
+      return `<tr><td class="mono">${point.address}</td><td>${escapeHtml(point.name)}</td><td class="mono">${escapeHtml(dataType)}</td><td><span class="pill">${escapeHtml(behavior)}</span></td><td class="row-actions"><button class="link-btn" data-edit="${index}">Edit</button><button class="link-btn" data-remove="${index}">Remove</button></td></tr>`;
     }
 
     function bindEditor(device) {
@@ -300,6 +305,8 @@
       document.getElementById('pointTitle').textContent = `${existing ? 'Edit' : 'Add'} ${group.short.toLowerCase()}`;
       document.getElementById('pointName').value = existing?.name || '';
       document.getElementById('pointAddress').value = existing?.address ?? (config.devices[selectedIndex].zero_based ? 0 : 1);
+      document.getElementById('registerTypeFields').hidden = group.boolean;
+      document.getElementById('registerDataType').value = existing?.data_type || 'float32';
       document.getElementById('initialFields').hidden = group.automation;
       document.getElementById('automationFields').hidden = !group.automation;
       document.getElementById('initialLabel').firstChild.textContent = group.boolean ? 'Initial state' : 'Initial value';
@@ -336,6 +343,8 @@
         const group = groups[activeGroup];
         const point = { address: Number(document.getElementById('pointAddress').value), name: document.getElementById('pointName').value.trim() };
         if (!point.name) throw new Error('Point name is required');
+        const dataType = document.getElementById('registerDataType').value;
+        if (!group.boolean && dataType !== 'float32') point.data_type = dataType;
         if (group.automation) point.automation = { type: document.getElementById('automationType').value, ...JSON.parse(document.getElementById('automationSettings').value) };
         else point.initial_value = group.boolean ? document.getElementById('initialValue').checked : Number(document.getElementById('initialValue').value);
         const points = config.devices[selectedIndex][activeGroup];

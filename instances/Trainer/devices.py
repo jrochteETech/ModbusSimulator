@@ -43,39 +43,94 @@ POWER_METERS = [make_power_meter(unit_id, index) for index, unit_id in enumerate
 def make_crah(unit_id: int, index: int) -> Equipment:
 	temperature_shift = index * 0.6
 	load_shift = index * 2.5
+	temperature_period = 42.0 + index
+	fan_period = 55.0 + index * 2.0
+	fan_power = 1.6 + index * 0.1
+	valve_position = sine(7.5, 65.0 + index, 54.0 + load_shift)
+	fan_speed = sine(90.0, fan_period, (65.0 + load_shift) * 18.0)
+	fan_feedback_addresses = (6, 11, 28, 21, 25, 15, 110, 112)
+	fan_ecm_addresses = (80, 82, 84, 86, 88, 90, 106, 108)
 	return Equipment(
 		name=f"CRAH Unit {index + 1}",
 		unit_id=unit_id,
+		zero_based=True,
 		coils=[
-			Coil(1, "Unit enabled", True),
-			Coil(2, "Fan running", True),
-			Coil(3, "Cooling active", True),
-			Coil(4, "Common alarm"),
-			Coil(5, "Dirty filter alarm"),
-			Coil(6, "High return temperature alarm"),
-			Coil(7, "Low supply temperature alarm"),
-			Coil(8, "Fan fault"),
+			Coil(0, "Fan/SF_En", True),
+			Coil(1, "CHW/CHWV_Auto_Mode", True),
+			Coil(7, "Fan/SF_Auto_Mode", True),
+			Coil(8, "System/Unit_En_Cmd", True),
+			Coil(9, "Alarms/Smoke_Alm"),
+			Coil(10, "Alarms/Fan_Flt"),
+			Coil(11, "Alarms/Drain_Pan_Lk_Detect"),
+			Coil(15, "Alarms/Supervisor_Comm_Loss"),
+			Coil(16, "CHW/CHWV_Is_ePIV", True),
+			Coil(17, "Alarms/CHWV_Deviating"),
+			Coil(18, "Fan/PID/SF_PID_ManMode"),
+			Coil(19, "System/Has_LeakDetector", True),
+			Coil(20, "System/Has_SmokeDetector", True),
+			Coil(21, "Alarms/RAT_Temp_Hi_Alm"),
+			Coil(22, "Alarms/RAT_Temp_Lo_Alm"),
+			Coil(23, "Alarms/SAT_Temp_Hi_Alm"),
+			Coil(24, "Alarms/SAT_Temp_Lo_Alm"),
+			Coil(25, "Alarms/Filter_DP_Hi_Alm"),
 		],
 		writable_holding_registers=[
-			WritableRegister(3, "Supply Air Temperature Setpoint", 56.0 + index * 0.5),
+			WritableRegister(39, "CHW/PID/CHWV_PID_Cycle_Time", 1.0),
+			WritableRegister(41, "Supply_Air/SAT_SP", 56.0 + temperature_shift),
+			WritableRegister(45, "CHW/PID/CHWV_PID_Kp", 1.0),
+			WritableRegister(47, "CHW/PID/CHWV_PID_Ti", 60, data_type="int16"),
+			WritableRegister(48, "CHW/PID/CHWV_PID_Td", 0, data_type="int16"),
+			WritableRegister(49, "CHW/PID/CHWV_PID_Lo_Lim", 0.0),
+			WritableRegister(51, "CHW/PID/CHWV_PID_Hi_Lim", 100.0),
+			WritableRegister(55, "CHW/CHWV_Man_Cmd", 0.0),
+			WritableRegister(57, "Fan/PID/SF_PID_Cycle_Time", 1.0),
+			WritableRegister(63, "Fan/PID/SF_PID_Kp", 1.0),
+			WritableRegister(65, "Fan/PID/SF_PID_Ti", 60, data_type="int16"),
+			WritableRegister(68, "Fan/PID/SF_PID_Lo_Lim", 20.0),
+			WritableRegister(70, "Fan/PID/SF_PID_Hi_Lim", 100.0),
+			WritableRegister(72, "Fan/SF_Spd_Man_Cmd", 65.0 + load_shift),
+			WritableRegister(75, "Fan/PID/SF_PID_Td", 0, data_type="int16"),
+			*[
+				WritableRegister(address, f"Fan/Fan_{fan:02d}/ECM_Address", fan, data_type="uint32")
+				for fan, address in enumerate(fan_ecm_addresses, start=1)
+			],
+			WritableRegister(92, "Return_Air/RAT_SP", 75.0 + temperature_shift),
+			WritableRegister(120, "Return_Air/RA_Fan_CTRL_SP / RAT_High_Lim_SP", 80.0 + temperature_shift),
+			WritableRegister(122, "Return_Air/RA_Fan_CTRL_DB", 2.0),
+			WritableRegister(124, "CHW/CHWV_StartUp_Pos", 20.0),
+			WritableRegister(150, "CHW/CHWV_Dev_SP", 10.0),
+			WritableRegister(152, "Return_Air/RAT_Hi_Dly", 30, data_type="int16"),
+			WritableRegister(153, "Return_Air/RAT_Hi_SP", 90.0),
+			WritableRegister(155, "Return_Air/RAT_Lo_Dly", 30, data_type="int16"),
+			WritableRegister(156, "Return_Air/RAT_Lo_SP", 60.0),
+			WritableRegister(158, "Supply_Air/SAT_Hi_Dly", 30, data_type="int16"),
+			WritableRegister(159, "Supply_Air/SAT_Hi_SP", 75.0),
+			WritableRegister(161, "Supply_Air/SAT_Lo_Dly", 30, data_type="int16"),
+			WritableRegister(162, "Supply_Air/SAT_Lo_SP", 45.0),
+			WritableRegister(165, "System/Filter_DP_Hi_Alm_SP", 1.0),
+			WritableRegister(169, "CHW/CHWV_Max_Flow", 100.0),
 		],
 		holding_registers=[
-			Register(1, "Fan Speed Command", sine(5.0, 55.0 + index * 2.0, 65.0 + load_shift)),
-		],
-		input_registers=[
-			Register(1, "Return Air Temperature", sine(1.5, 42.0 + index, 75.0 + temperature_shift)),
-			Register(3, "Supply Air Temperature", sine(1.0, 38.0 + index, 56.0 + temperature_shift)),
-			Register(5, "Return Air Humidity", sine(2.0, 52.0 + index, 42.0 + index * 0.7)),
-			Register(7, "Supply Air Humidity", sine(2.0, 48.0 + index, 49.0 + index * 0.6)),
-			Register(9, "Static Pressure", sine(0.08, 28.0 + index, 1.2 + index * 0.08)),
-			Register(11, "Fan Speed Feedback", sine(4.8, 55.0 + index * 2.0, 64.5 + load_shift)),
-			Register(13, "Cooling Demand", sine(8.0, 65.0 + index, 55.0 + load_shift)),
-			Register(15, "CHW Valve Position", sine(7.5, 65.0 + index, 54.0 + load_shift)),
-			Register(17, "Entering CHW Temperature", sine(0.7, 60.0 + index, 42.0 + index * 0.3)),
-			Register(19, "Leaving CHW Temperature", sine(1.0, 60.0 + index, 51.0 + index * 0.4)),
-			Register(21, "Filter Differential Pressure", sine(0.02, 32.0 + index, 0.25 + index * 0.025)),
-			Register(23, "Cooling Capacity", sine(10.0, 65.0 + index, 70.0 + load_shift)),
-			Register(25, "Electrical Power", sine(2.5, 55.0 + index, 16.0 + index * 1.5)),
+			Register(0, "CHW/CHWV_Cmd", valve_position),
+			Register(2, "Fan/Fan_Spd_Cmd", sine(5.0, fan_period, 65.0 + load_shift)),
+			*[
+				Register(address, f"Fan/Fan_{fan:02d}/Fan_Spd_Fdbk", fan_speed, data_type="uint16")
+				for fan, address in enumerate(fan_feedback_addresses, start=1)
+			],
+			Register(31, "Supply_Air/SAT", sine(1.0, temperature_period, 56.0 + temperature_shift)),
+			Register(35, "System/Filter_DP", sine(0.02, 32.0 + index, 0.25 + index * 0.025)),
+			Register(37, "CHW/CHWV_Fdbk", valve_position),
+			Register(78, "Return_Air/RAT", sine(1.5, temperature_period, 75.0 + temperature_shift)),
+			Register(126, "CHW/CHW_Flow_Pct", valve_position),
+			Register(128, "CHW/CHW_Flow", valve_position),
+			*[
+				Register(130 + (fan - 1) * 2, f"Fan/Fan_{fan:02d}/Fan_Pwr", sine(0.18, fan_period, fan_power))
+				for fan in range(1, 9)
+			],
+			Register(146, "Fan/Fan_Total_Pwr", sine(1.44, fan_period, fan_power * 8)),
+			Register(148, "CHW/CHWV_Deviation", sine(0.0, 60.0, 0.0)),
+			Register(164, "System/Filter_DP_Hi_Alm_Dly", sine(0.0, 60.0, 30.0), data_type="int16"),
+			Register(167, "System/Delta_T", sine(0.5, temperature_period, 19.0)),
 		],
 	)
 

@@ -1,4 +1,5 @@
 import csv
+from collections.abc import Sequence
 from io import StringIO
 import json
 import math
@@ -6,13 +7,22 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
 
-from equipment import Coil, Equipment, Register, WritableRegister
+from equipment import (
+    INTEGER_REGISTER_LIMITS,
+    Coil,
+    Equipment,
+    Register,
+    WritableRegister,
+    register_to_values,
+    register_width,
+)
 
 
 CONFIG_VERSION = 1
 CSV_FIELDS = [
     "device_name", "unit_id", "zero_based", "reverse_word_order", "point_type",
     "address", "point_name", "initial_value", "automation_type", "automation_settings",
+    "data_type",
 ]
 
 
@@ -51,15 +61,26 @@ def equipment_to_dict(equipment: Equipment) -> dict[str, Any]:
             for item in equipment.coils
         ],
         "writable_holding_registers": [
-            {"address": item.address, "name": item.name, "initial_value": item.initial_value}
+            {
+                "address": item.address, "name": item.name, "initial_value": item.initial_value,
+                **({"data_type": item.data_type} if item.data_type != "float32" else {}),
+            }
             for item in equipment.writable_holding_registers
         ],
         "holding_registers": [
-            {"address": item.address, "name": item.name, "automation": automation_to_dict(item.automation)}
+            {
+                "address": item.address, "name": item.name,
+                "automation": automation_to_dict(item.automation),
+                **({"data_type": item.data_type} if item.data_type != "float32" else {}),
+            }
             for item in equipment.holding_registers
         ],
         "input_registers": [
-            {"address": item.address, "name": item.name, "automation": automation_to_dict(item.automation)}
+            {
+                "address": item.address, "name": item.name,
+                "automation": automation_to_dict(item.automation),
+                **({"data_type": item.data_type} if item.data_type != "float32" else {}),
+            }
             for item in equipment.input_registers
         ],
     }
@@ -73,15 +94,24 @@ def equipment_from_dict(data: dict[str, Any]) -> Equipment:
         reverse_word_order=bool(data.get("reverse_word_order", False)),
         coils=[Coil(int(item["address"]), str(item["name"]), bool(item.get("initial_value", False))) for item in data.get("coils", [])],
         writable_holding_registers=[
-            WritableRegister(int(item["address"]), str(item["name"]), float(item.get("initial_value", 0)))
+            WritableRegister(
+                int(item["address"]), str(item["name"]), float(item.get("initial_value", 0)),
+                data_type=str(item.get("data_type", "float32")),
+            )
             for item in data.get("writable_holding_registers", [])
         ],
         holding_registers=[
-            Register(int(item["address"]), str(item["name"]), automation_from_dict(item["automation"]))
+            Register(
+                int(item["address"]), str(item["name"]), automation_from_dict(item["automation"]),
+                data_type=str(item.get("data_type", "float32")),
+            )
             for item in data.get("holding_registers", [])
         ],
         input_registers=[
-            Register(int(item["address"]), str(item["name"]), automation_from_dict(item["automation"]))
+            Register(
+                int(item["address"]), str(item["name"]), automation_from_dict(item["automation"]),
+                data_type=str(item.get("data_type", "float32")),
+            )
             for item in data.get("input_registers", [])
         ],
     )
@@ -126,6 +156,7 @@ def document_to_csv(document: dict[str, Any]) -> str:
                         {key: value for key, value in automation.items() if key != "type"},
                         separators=(",", ":"),
                     ) if automation else "",
+                    "data_type": point.get("data_type", ""),
                 })
                 wrote_point = True
         if not wrote_point:
@@ -136,7 +167,7 @@ def document_to_csv(document: dict[str, Any]) -> str:
 def document_from_csv(content: str) -> dict[str, Any]:
     devices: dict[int, dict[str, Any]] = {}
     reader = csv.DictReader(StringIO(content))
-    if reader.fieldnames != CSV_FIELDS:
+    if reader.fieldnames not in (CSV_FIELDS, CSV_FIELDS[:-1]):
         raise ValueError("CSV columns do not match the exported device format")
     for row_number, row in enumerate(reader, start=2):
         try:
@@ -159,6 +190,10 @@ def document_from_csv(content: str) -> dict[str, Any]:
             if point_type not in {"coils", "writable_holding_registers", "holding_registers", "input_registers"}:
                 raise ValueError(f"unknown point type {point_type}")
             point: dict[str, Any] = {"address": int(row["address"]), "name": row["point_name"]}
+            if row.get("data_type"):
+                if point_type == "coils":
+                    raise ValueError("coils cannot have a register data type")
+                point["data_type"] = row["data_type"]
             if point_type == "coils":
                 point["initial_value"] = _csv_bool(row["initial_value"])
             elif point_type == "writable_holding_registers":
@@ -192,30 +227,66 @@ def validate_equipment(devices: list[Equipment]) -> None:
             raise ValueError(f"Unit ID {device.unit_id} is used more than once")
         unit_ids.add(device.unit_id)
 
-        _validate_points(device, "coils", device.coils, width=1)
+        _validate_points(device, "coils", device.coils)
         _validate_points(
             device,
             "holding registers",
             [*device.writable_holding_registers, *device.holding_registers],
-            width=2,
         )
-        _validate_points(device, "input registers", device.input_registers, width=2)
+        _validate_points(device, "input registers", device.input_registers)
+        for register in device.writable_holding_registers:
+            label = f"{device.name}: {register.name}"
+            try:
+                register_to_values(register.initial_value, register.data_type)
+                if (
+                    register.data_type in INTEGER_REGISTER_LIMITS
+                    and register.initial_value != round(register.initial_value)
+                ):
+                    raise ValueError("Integer register initial values must be whole numbers")
+            except ValueError as error:
+                raise ValueError(f"{label}: {error}") from error
         for register in [*device.holding_registers, *device.input_registers]:
-            _validate_automation(register.automation, f"{device.name}: {register.name}")
+            label = f"{device.name}: {register.name}"
+            _validate_automation(register.automation, label)
+            _validate_integer_automation(register, label)
 
 
-def _validate_points(device: Equipment, group_name: str, points: list[Any], width: int) -> None:
+def _validate_points(
+    device: Equipment,
+    group_name: str,
+    points: Sequence[Coil | Register | WritableRegister],
+) -> None:
     occupied: set[int] = set()
     for point in points:
         if not point.name.strip():
             raise ValueError(f"{device.name}: point names cannot be empty")
         start = device.protocol_address(point.address)
+        width = 1 if isinstance(point, Coil) else register_width(point.data_type)
         span = set(range(start, start + width))
         if max(span) >= device.datastore_size:
             raise ValueError(f"{device.name}: address {point.address} exceeds the datastore size")
         if occupied & span:
             raise ValueError(f"{device.name}: address {point.address} overlaps another {group_name} point")
         occupied.update(span)
+
+
+def _validate_integer_automation(register: Register, label: str) -> None:
+    limits = INTEGER_REGISTER_LIMITS.get(register.data_type)
+    if limits is None:
+        return
+    kind, settings = register.automation
+    if kind == "sine":
+        amplitude = abs(settings["amplitude"])
+        low, high = settings["offset"] - amplitude, settings["offset"] + amplitude
+    elif kind == "linear":
+        low, high = sorted((settings["start"], settings["end"]))
+    else:
+        raise ValueError(f"{label}: integer registers support only sine and linear automation")
+    if low < limits[0] or high > limits[1]:
+        raise ValueError(
+            f"{label}: automation range must be between {limits[0]} and {limits[1]} "
+            f"for {register.data_type}"
+        )
 
 
 def _validate_automation(automation: tuple[str, dict[str, Any]], label: str) -> None:
