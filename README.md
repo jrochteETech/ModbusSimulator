@@ -19,7 +19,9 @@ Use **Apply changes** after editing a device or point. The new map takes effect 
 
 ## Configuration
 
-On first startup, each instance's `devices.py` seeds an `instances/<name>/devices.json` file. The JSON file is the persistent configuration from that point forward. Delete it and restart the instance to regenerate it from `devices.py`.
+Interview seeds `instances/Interview/devices.json` from its `devices.py` on first startup. That host-mounted JSON file preserves its web edits across restarts and redeploys. Delete it and restart Interview to regenerate its defaults.
+
+Trainer runs the code packaged in the image, without host-file overrides. It seeds `/tmp/modbus-trainer/devices.json` inside the container from its packaged `devices.py`. Web edits survive ordinary container restarts, but recreating the container discards them and loads the image's defaults. Host-side Trainer JSON files are not used.
 
 The UI imports and exports both JSON and CSV. CSV is convenient for spreadsheet editing and uses these columns:
 
@@ -35,7 +37,13 @@ Trainer units 4-13 use the supplied CRAH_V2 map with eight fans and zero-based a
 
 The UDT's `RA_Fan_CTRL_SP` and `RAT_High_Lim_SP` both address `HRF120` and therefore share one value. The 33 UDT tags without OPC item paths cannot be mapped.
 
-The CRAH definitions replace the previous Trainer maps directly; no migration is needed. A container rebuild does not clear an existing `instances/Trainer/devices.json`, because that directory is bind-mounted. If present, remove that file before starting the rebuilt container to regenerate the Trainer defaults. This resets all saved Trainer UI customizations.
+The CRAH definitions replace the previous Trainer maps directly; no migration is needed. Rebuild the image and recreate Trainer to load them:
+
+```powershell
+docker compose up --build --force-recreate -d modbus-trainer
+```
+
+This resets all saved Trainer UI customizations. Interview is unchanged. Rebuilding an image without recreating the running Trainer container does not reset its configuration.
 
 ## Tests
 
